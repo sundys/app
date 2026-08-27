@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:locale="zh-rCN">
-    <string name="displayName" translatable="false">验证器</string>
+    <string name="displayName" translatable="false">身份验证器</string>
     <!-- 
         Non-specific strings
     -->

@@ -609,22 +609,6 @@ fragment.BackupClicked += delegate
 
                 sub.AboutClicked += delegate { StartActivity(typeof(AboutActivity)); };
 
-                sub.SupportClicked += delegate { StartWebBrowserActivity(GetString(Resource.String.buyMeACoffee)); };
-
-                sub.RateClicked += delegate
-                {
-                    var intent = new Intent(Intent.ActionView, Uri.Parse("market://details?id=" + PackageName));
-
-                    try
-                    {
-                        StartActivity(intent);
-                    }
-                    catch (ActivityNotFoundException)
-                    {
-                        ShowSnackbar(Resource.String.googlePlayNotInstalledError, Snackbar.LengthShort);
-                    }
-                };
-
                 sub.ViewGitHubClicked += delegate { StartWebBrowserActivity(GetString(Resource.String.githubRepo)); };
 
                 sub.Show(SupportFragmentManager, sub.Tag);

@@ -15,8 +15,6 @@ namespace Stratum.Droid.Interface.Fragment
         }
 
         public event EventHandler AboutClicked;
-        public event EventHandler SupportClicked;
-        public event EventHandler RateClicked;
         public event EventHandler ViewGitHubClicked;
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -28,10 +26,6 @@ namespace Stratum.Droid.Interface.Fragment
             [
                 new SheetMenuItem(Resource.Drawable.outline_info_24, Resource.String.about, AboutClicked,
                     Resource.String.aboutSummary),
-                new SheetMenuItem(Resource.Drawable.ic_buymeacoffee, Resource.String.supportDevelopment, SupportClicked,
-                    Resource.String.supportDevelopmentSummary),
-                new SheetMenuItem(Resource.Drawable.ic_googleplay, Resource.String.rate,
-                    RateClicked, Resource.String.rateSummary),
                 new SheetMenuItem(Resource.Drawable.ic_github, Resource.String.viewGitHub,
                     ViewGitHubClicked, Resource.String.viewGitHubSummary)
             ]);
