@@ -163,6 +163,8 @@
     <string name="assignCategories">Assign categories</string>
     <string name="assignEntries">Assign entries</string>
     <string name="more">More</string>
+    <string name="addCategory">Add category</string>
+    <string name="manageCategories">Manage categories</string>
     <string name="categoryAll">All</string>
     <string name="categoryUncategorised">Uncategorised</string>
     <string name="editCategories">Edit categories</string>

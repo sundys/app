@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Stratum.Core.Entity;
@@ -142,6 +143,13 @@ namespace Stratum.Droid
 
             await _connection.CreateTableAsync<Authenticator>();
             await _connection.CreateTableAsync<Category>();
+
+            var categoryColumns = await _connection.GetTableInfoAsync("category");
+            if (!categoryColumns.Any(c => c.Name == "icon"))
+            {
+                await _connection.ExecuteAsync("ALTER TABLE category ADD COLUMN icon TEXT");
+            }
+
             await _connection.CreateTableAsync<AuthenticatorCategory>();
             await _connection.CreateTableAsync<CustomIcon>();
             await _connection.CreateTableAsync<IconPack>();

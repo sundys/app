@@ -12,9 +12,10 @@
         <AndroidVersionCodePattern>{versionCode}</AndroidVersionCodePattern>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-        <AndroidUseSharedRuntime>true</AndroidUseSharedRuntime>
+        <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+        <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
         <ProduceReferenceAssembly>True</ProduceReferenceAssembly>
-        <RuntimeIdentifiers>android-x64</RuntimeIdentifiers>
+        <RuntimeIdentifiers>android-arm;android-arm64;android-x64</RuntimeIdentifiers>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <AndroidUseDefaultAotProfile>false</AndroidUseDefaultAotProfile>

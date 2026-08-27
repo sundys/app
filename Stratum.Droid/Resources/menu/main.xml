@@ -38,6 +38,15 @@
                 <item android:id="@+id/actionSortLockUnlock"
                       android:title="@string/sortLock"/>
             </group>
+
+            <group android:checkableBehavior="single" android:id="@+id/actionViewModeChoices">
+                <item android:id="@+id/actionViewModeDefault"
+                      android:title="@string/defaultViewMode"/>
+                <item android:id="@+id/actionViewModeCompact"
+                      android:title="@string/compactViewMode"/>
+                <item android:id="@+id/actionViewModeTile"
+                      android:title="@string/tileViewMode"/>
+            </group>
         </menu>
 
     </item>

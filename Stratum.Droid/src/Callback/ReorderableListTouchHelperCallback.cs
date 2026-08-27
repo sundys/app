@@ -39,7 +39,8 @@ namespace Stratum.Droid.Callback
 
         public override int GetMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder)
         {
-            if (IsLocked)
+            if (IsLocked || _adapter is IRestrictedReorderableListAdapter restrictedAdapter &&
+                !restrictedAdapter.CanMove(viewHolder.BindingAdapterPosition))
             {
                 return MakeMovementFlags(0, 0);
             }
@@ -57,6 +58,13 @@ namespace Stratum.Droid.Callback
         public override bool OnMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder,
             RecyclerView.ViewHolder target)
         {
+            if (_adapter is IRestrictedReorderableListAdapter restrictedAdapter &&
+                (!restrictedAdapter.CanMove(viewHolder.BindingAdapterPosition) ||
+                 !restrictedAdapter.CanMove(target.BindingAdapterPosition)))
+            {
+                return false;
+            }
+
             if (_movementEndPosition == -1)
             {
                 _adapter.OnMovementStarted();

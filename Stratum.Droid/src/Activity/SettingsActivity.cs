@@ -56,7 +56,7 @@ namespace Stratum.Droid.Activity
                 case "pref_tapToCopy":
                 case "pref_tapToRevealDuration":
                 case "pref_allowScreenshots":
-                case "pref_viewMode":
+                case "pref_showUncategorised":
                 case "pref_codeGroupSize":
                 case "pref_showUsernames":
                 case "pref_transparentStatusBar":

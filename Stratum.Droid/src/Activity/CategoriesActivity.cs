@@ -2,14 +2,20 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Android.App;
+using Android.Content;
+using Android.Graphics;
 using Android.OS;
 using Android.Views;
 using Android.Views.Animations;
 using Android.Widget;
 using AndroidX.Core.Graphics;
 using AndroidX.RecyclerView.Widget;
+using Stratum.Core;
+using Stratum.Core.Backup;
 using Stratum.Core.Entity;
 using Stratum.Core.Persistence.Exception;
 using Stratum.Core.Service;
@@ -24,6 +30,8 @@ using Stratum.Droid.Interface.Fragment;
 using Stratum.Droid.Interface.LayoutManager;
 using Stratum.Droid.Persistence.View;
 using Stratum.Droid.Util;
+using Uri = Android.Net.Uri;
+using Insets = AndroidX.Core.Graphics.Insets;
 
 namespace Stratum.Droid.Activity
 {
@@ -33,6 +41,11 @@ namespace Stratum.Droid.Activity
         private readonly ILogger _log = Log.ForContext<CategoriesActivity>();
         private readonly ICategoryView _categoryView;
         private readonly ICategoryService _categoryService;
+        private readonly ICustomIconService _customIconService;
+        private readonly ICustomIconDecoder _customIconDecoder;
+
+        private const int RequestCategoryCustomIcon = 0;
+        private string _customIconApplyCategoryId;
 
         private LinearLayout _emptyStateLayout;
         private CategoryListAdapter _categoryListAdapter;
@@ -42,6 +55,8 @@ namespace Stratum.Droid.Activity
         {
             _categoryView = Dependencies.Resolve<ICategoryView>();
             _categoryService = Dependencies.Resolve<ICategoryService>();
+            _customIconService = Dependencies.Resolve<ICustomIconService>();
+            _customIconDecoder = Dependencies.Resolve<ICustomIconDecoder>();
         }
 
         protected override async void OnCreate(Bundle savedInstanceState)
@@ -183,10 +198,122 @@ namespace Stratum.Droid.Activity
 
             var fragment = new EditCategoryMenuBottomSheet { Arguments = bundle };
             fragment.RenameClicked += OnRenameClicked;
+            fragment.ChangeIconClicked += OnChangeIconClicked;
             fragment.AssignEntriesClicked += OnAssignEntriesClick;
             fragment.SetDefaultClicked += OnSetDefaultClick;
             fragment.DeleteClicked += OnDeleteClick;
             fragment.Show(SupportFragmentManager, fragment.Tag);
+        }
+
+        private void OnChangeIconClicked(object sender, string id)
+        {
+            var category = _categoryView.FirstOrDefault(c => c.Id == id);
+
+            if (category == null)
+            {
+                return;
+            }
+
+            var bundle = new Bundle();
+            bundle.PutString("secret", category.Id);
+
+            var fragment = new ChangeIconBottomSheet { Arguments = bundle };
+            fragment.DefaultIconSelected += OnCategoryDefaultIconSelected;
+            fragment.IconPackEntrySelected += OnCategoryIconPackEntrySelected;
+            fragment.UseCustomIconClick += delegate
+            {
+                _customIconApplyCategoryId = category.Id;
+                StartFilePickActivity("image/*", RequestCategoryCustomIcon);
+            };
+            fragment.Show(SupportFragmentManager, fragment.Tag);
+        }
+
+        private async void OnCategoryDefaultIconSelected(object sender,
+            ChangeIconBottomSheet.DefaultIconSelectedEventArgs args)
+        {
+            await SetCategoryIconAsync(args.Secret, args.Icon);
+            ((ChangeIconBottomSheet) sender).Dismiss();
+        }
+
+        private async void OnCategoryIconPackEntrySelected(object sender,
+            ChangeIconBottomSheet.IconPackEntrySelectedEventArgs args)
+        {
+            var stream = new MemoryStream();
+
+            try
+            {
+                await args.Icon.CompressAsync(Bitmap.CompressFormat.Png, 100, stream);
+                var icon = await _customIconDecoder.DecodeAsync(stream.ToArray(), false);
+                await SetCategoryCustomIconAsync(args.Secret, icon);
+            }
+            catch (Exception e)
+            {
+                _log.Error(e, "Failed to set category icon from an icon pack");
+                ShowSnackbar(Resource.String.filePickError, Snackbar.LengthShort);
+            }
+            finally
+            {
+                stream.Close();
+            }
+
+            ((ChangeIconBottomSheet) sender).Dismiss();
+        }
+
+        protected override async void OnActivityResult(int requestCode, [Android.Runtime.GeneratedEnum] Result resultCode,
+            Intent intent)
+        {
+            base.OnActivityResult(requestCode, resultCode, intent);
+
+            if (requestCode != RequestCategoryCustomIcon || resultCode != Result.Ok ||
+                _customIconApplyCategoryId == null)
+            {
+                return;
+            }
+
+            var categoryId = _customIconApplyCategoryId;
+            _customIconApplyCategoryId = null;
+
+            try
+            {
+                var data = await FileUtil.ReadFileAsync(this, intent.Data);
+                var icon = await _customIconDecoder.DecodeAsync(data, true);
+                await SetCategoryCustomIconAsync(categoryId, icon);
+            }
+            catch (Exception e)
+            {
+                _log.Error(e, "Failed to set custom category icon");
+                ShowSnackbar(Resource.String.filePickError, Snackbar.LengthShort);
+            }
+        }
+
+        private async Task SetCategoryCustomIconAsync(string categoryId, CustomIcon icon)
+        {
+            await _customIconService.AddIfNotExistsAsync(icon);
+            await SetCategoryIconAsync(categoryId, CustomIcon.Prefix + icon.Id);
+        }
+
+        private async Task SetCategoryIconAsync(string categoryId, string icon)
+        {
+            var category = _categoryView.FirstOrDefault(c => c.Id == categoryId);
+
+            if (category == null)
+            {
+                return;
+            }
+
+            try
+            {
+                category.Icon = icon;
+                await _categoryService.UpdateManyCategoriesAsync(new[] { category });
+                await _categoryView.LoadFromPersistenceAsync();
+                _categoryListAdapter.NotifyDataSetChanged();
+                Preferences.BackupRequired = BackupRequirement.WhenPossible;
+            }
+            catch (Exception e)
+            {
+                _log.Error(e, "Failed to set category icon");
+                ShowSnackbar(Resource.String.genericError, Snackbar.LengthShort);
+            }
         }
 
         private void OnRenameClicked(object item, string id)
@@ -269,7 +396,7 @@ namespace Stratum.Droid.Activity
             }
 
             var isDefault = Preferences.DefaultCategory == initial.Id;
-            var next = new Category(args.Name) { Ranking = initial.Ranking };
+            var next = new Category(args.Name) { Icon = initial.Icon, Ranking = initial.Ranking };
 
             try
             {
@@ -356,6 +483,8 @@ namespace Stratum.Droid.Activity
                 try
                 {
                     await _categoryService.DeleteWithCategoryBindingsASync(category);
+                    await _customIconService.CullUnusedAsync();
+                    Preferences.BackupRequired = BackupRequirement.WhenPossible;
                 }
                 catch (Exception e)
                 {

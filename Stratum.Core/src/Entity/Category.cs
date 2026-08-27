@@ -35,6 +35,10 @@ namespace Stratum.Core.Entity
         [MaxLength(NameMaxLength)]
         public string Name { get; set; }
 
+        // Uses the same icon key format as authenticators: a bundled icon key or @<custom icon id>.
+        [Column("icon")]
+        public string Icon { get; set; }
+
         [Column("ranking")]
         public int Ranking { get; set; }
     }

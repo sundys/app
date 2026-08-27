@@ -31,12 +31,12 @@ namespace Stratum.Core.Comparer
                 return false;
             }
 
-            return x.Id == y.Id && x.Name == y.Name && x.Ranking == y.Ranking;
+            return x.Id == y.Id && x.Name == y.Name && x.Icon == y.Icon && x.Ranking == y.Ranking;
         }
 
         public int GetHashCode(Category obj)
         {
-            return HashCode.Combine(obj.Id, obj.Name, obj.Ranking);
+            return HashCode.Combine(obj.Id, obj.Name, obj.Icon, obj.Ranking);
         }
     }
 }

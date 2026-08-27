@@ -18,6 +18,7 @@ namespace Stratum.Droid.Interface.Fragment
         }
 
         public event EventHandler<string> RenameClicked;
+        public event EventHandler<string> ChangeIconClicked;
         public event EventHandler<string> AssignEntriesClicked;
         public event EventHandler<string> SetDefaultClicked;
         public event EventHandler<string> DeleteClicked;
@@ -36,6 +37,8 @@ namespace Stratum.Droid.Interface.Fragment
             var menu = view.FindViewById<RecyclerView>(Resource.Id.listMenu);
             SetupMenu(menu, [
                 new SheetMenuItem(Resource.Drawable.baseline_edit_24, Resource.String.rename, delegate { RenameClicked(this, _id); }),
+                new SheetMenuItem(Resource.Drawable.baseline_image_24, Resource.String.changeIcon,
+                    delegate { ChangeIconClicked(this, _id); }),
                 new SheetMenuItem(Resource.Drawable.baseline_checklist_24, Resource.String.assignEntries,
                     delegate { AssignEntriesClicked(this, _id); }),
                 new SheetMenuItem(Resource.Drawable.baseline_star_24,

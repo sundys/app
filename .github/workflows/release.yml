@@ -89,7 +89,7 @@ jobs:
           token: "${{ secrets.GH_TOKEN }}"
           discussion_category_name: "General"
           body_path: "${{ env.CHANGELOG_PATH }}"
-          draft: true
+          draft: false
 
   fdroid:
     runs-on: ubuntu-24.04

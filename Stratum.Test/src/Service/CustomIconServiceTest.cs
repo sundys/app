@@ -18,14 +18,16 @@ namespace Stratum.Test.Service
     {
         private readonly Mock<ICustomIconRepository> _customIconRepository;
         private readonly Mock<IAuthenticatorRepository> _authenticatorRepository;
+        private readonly Mock<ICategoryRepository> _categoryRepository;
         private readonly ICustomIconService _customIconService;
 
         public CustomIconServiceTest()
         {
             _customIconRepository = new Mock<ICustomIconRepository>();
             _authenticatorRepository = new Mock<IAuthenticatorRepository>();
+            _categoryRepository = new Mock<ICategoryRepository>();
             _customIconService = new CustomIconService(
-                _customIconRepository.Object, _authenticatorRepository.Object);
+                _customIconRepository.Object, _authenticatorRepository.Object, _categoryRepository.Object);
         }
 
         [Fact]
@@ -109,6 +111,8 @@ namespace Stratum.Test.Service
 
             _authenticatorRepository.Setup(r => r.GetAllAsync())
                 .ReturnsAsync([authA, authB, authC]);
+            _categoryRepository.Setup(r => r.GetAllAsync())
+                .ReturnsAsync([new Category { Icon = $"{CustomIcon.Prefix}id" }]);
             _customIconRepository.Setup(r => r.GetAllAsync())
                 .ReturnsAsync([iconUsed, iconUnused]);
 

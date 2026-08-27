@@ -15,12 +15,14 @@ namespace Stratum.Core.Service.Impl
     {
         private readonly ICustomIconRepository _customIconRepository;
         private readonly IAuthenticatorRepository _authenticatorRepository;
+        private readonly ICategoryRepository _categoryRepository;
 
         public CustomIconService(ICustomIconRepository customIconRepository,
-            IAuthenticatorRepository authenticatorRepository)
+            IAuthenticatorRepository authenticatorRepository, ICategoryRepository categoryRepository)
         {
             _customIconRepository = customIconRepository;
             _authenticatorRepository = authenticatorRepository;
+            _categoryRepository = categoryRepository;
         }
 
         public async Task AddIfNotExistsAsync(CustomIcon icon)
@@ -65,11 +67,14 @@ namespace Stratum.Core.Service.Impl
         public async Task CullUnusedAsync()
         {
             var authenticators = await _authenticatorRepository.GetAllAsync();
+            var categories = await _categoryRepository.GetAllAsync();
             var icons = await _customIconRepository.GetAllAsync();
 
             var iconsInUse = authenticators
-                .Where(a => a.Icon != null && a.Icon.StartsWith(CustomIcon.Prefix))
-                .Select(a => a.Icon[1..])
+                .Select(a => a.Icon)
+                .Concat(categories.Select(c => c.Icon))
+                .Where(icon => icon != null && icon.StartsWith(CustomIcon.Prefix))
+                .Select(icon => icon[1..])
                 .Distinct();
 
             var unusedIcons = icons.Where(i => !iconsInUse.Contains(i.Id));

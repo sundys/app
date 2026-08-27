@@ -18,6 +18,8 @@ namespace Stratum.Droid.Interface.Fragment
         public event EventHandler EnterKeyClicked;
         public event EventHandler RestoreClicked;
         public event EventHandler ImportClicked;
+        public event EventHandler AddCategoryClicked;
+        public event EventHandler ManageCategoriesClicked;
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
@@ -27,6 +29,8 @@ namespace Stratum.Droid.Interface.Fragment
             [
                 new SheetMenuItem(Resource.Drawable.baseline_qr_code_24, Resource.String.scanQrCode, QrCodeClicked),
                 new SheetMenuItem(Resource.Drawable.baseline_vpn_key_24, Resource.String.enterKey, EnterKeyClicked),
+                new SheetMenuItem(Resource.Drawable.baseline_category_24, Resource.String.addCategory, AddCategoryClicked),
+                new SheetMenuItem(Resource.Drawable.baseline_edit_24, Resource.String.manageCategories, ManageCategoriesClicked),
                 new SheetMenuItem(Resource.Drawable.baseline_restore_24, Resource.String.restoreBackup, RestoreClicked),
                 new SheetMenuItem(Resource.Drawable.baseline_input_24, Resource.String.importFromOtherApps, ImportClicked)
             ]);

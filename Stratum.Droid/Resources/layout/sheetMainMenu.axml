@@ -27,35 +27,6 @@
                 android:textAlignment="center"
                 android:id="@+id/textTitle"/>
 
-            <com.google.android.material.textview.MaterialTextView
-                android:text="@string/categories"
-                android:textAppearance="?attr/textAppearanceSubtitle2"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginBottom="18dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/listCategories"
-                android:overScrollMode="never"
-                android:background="@drawable/listitemborder"
-                android:layout_marginBottom="20dp"
-                android:paddingBottom="10dp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-
-            <com.google.android.material.textview.MaterialTextView
-                android:text="@string/more"
-                android:textAppearance="?attr/textAppearanceSubtitle2"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginBottom="12dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/listMenu"
                 android:overScrollMode="never"

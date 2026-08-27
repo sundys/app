@@ -107,6 +107,7 @@ namespace Stratum.Droid.Activity
         private readonly IRestoreService _restoreService;
 
         private readonly IAuthenticatorView _authenticatorView;
+        private readonly ICategoryView _categoryView;
         private readonly ICustomIconView _customIconView;
 
         private readonly IIconResolver _iconResolver;
@@ -123,6 +124,11 @@ namespace Stratum.Droid.Activity
         private AuthenticatorListAdapter _authenticatorListAdapter;
         private AutoGridLayoutManager _authenticatorLayout;
         private ReorderableListTouchHelperCallback _authenticatorTouchHelperCallback;
+        private CategoryHomeListAdapter _categoryHomeListAdapter;
+        private FixedGridLayoutManager _categoryLayout;
+        private ReorderableListTouchHelperCallback _categoryTouchHelperCallback;
+        private ItemTouchHelper _currentTouchHelper;
+        private RecyclerView.ItemDecoration _listItemDecoration;
         private BackPressCallback _backPressCallback;
 
         // State
@@ -135,6 +141,7 @@ namespace Stratum.Droid.Activity
         private bool _preventBackupReminder;
         private bool _unlockFragmentOpen;
         private bool _shouldLoadFromPersistenceOnNextOpen;
+        private bool _isShowingCategoryHome;
         private string _customIconApplySecret;
 
         public MainActivity() : base(Resource.Layout.activityMain)
@@ -153,6 +160,7 @@ namespace Stratum.Droid.Activity
             _restoreService = Dependencies.Resolve<IRestoreService>();
 
             _authenticatorView = Dependencies.Resolve<IAuthenticatorView>();
+            _categoryView = Dependencies.Resolve<ICategoryView>();
             _customIconView = Dependencies.Resolve<ICustomIconView>();
         }
 
@@ -174,31 +182,19 @@ namespace Stratum.Droid.Activity
             RunOnUiThread(InitViews);
             
             CategorySelector categorySelector = null;
+            _isShowingCategoryHome = savedInstanceState == null ||
+                                     savedInstanceState.GetBoolean("isShowingCategoryHome", true);
 
             if (savedInstanceState != null)
             {
                 _pauseTime = new DateTime(savedInstanceState.GetLong("pauseTime"));
                 _lastBackupReminderTime = new DateTime(savedInstanceState.GetLong("lastBackupReminderTime"));
-                var lastCategorySelector = savedInstanceState.GetObject<CategorySelector>("categorySelector");
-                
-                if (Preferences.DefaultCategory != null)
-                {
-                    categorySelector = CategorySelector.Of(Preferences.DefaultCategory); 
-                }
-                else if (lastCategorySelector != null)
-                {
-                    categorySelector = lastCategorySelector;
-                }
+                categorySelector = savedInstanceState.GetObject<CategorySelector>("categorySelector");
             }
             else
             {
                 _pauseTime = DateTime.MinValue;
                 _lastBackupReminderTime = DateTime.MinValue;
-
-                if (Preferences.DefaultCategory != null)
-                {
-                    categorySelector = CategorySelector.Of(Preferences.DefaultCategory);
-                }
             }
 
             _authenticatorView.CategorySelector = categorySelector ?? CategorySelector.Of(MetaCategory.All);
@@ -275,6 +271,7 @@ namespace Stratum.Droid.Activity
             outState.PutLong("pauseTime", _pauseTime.Ticks);
             outState.PutLong("lastBackupReminderTime", _lastBackupReminderTime.Ticks);
             outState.PutObject("categorySelector", _authenticatorView.CategorySelector);
+            outState.PutBoolean("isShowingCategoryHome", _isShowingCategoryHome);
         }
 
         protected override void OnPause()
@@ -420,7 +417,17 @@ namespace Stratum.Droid.Activity
             Task.Run(async delegate
             {
                 await Task.Delay(500);
-                RunOnUiThread(_authenticatorListAdapter.NotifyDataSetChanged);
+                RunOnUiThread(delegate
+                {
+                    if (_isShowingCategoryHome)
+                    {
+                        _categoryHomeListAdapter?.NotifyDataSetChanged();
+                    }
+                    else
+                    {
+                        _authenticatorListAdapter?.NotifyDataSetChanged();
+                    }
+                });
             });
         }
 
@@ -438,6 +445,7 @@ namespace Stratum.Droid.Activity
             var searchItem = menu.FindItem(Resource.Id.actionSearch);
             var searchView = (SearchView) searchItem.ActionView;
             searchView.QueryHint = GetString(Resource.String.search);
+            searchItem.SetVisible(!_isShowingCategoryHome);
 
             searchView.QueryTextChange += (_, e) =>
             {
@@ -447,12 +455,18 @@ namespace Stratum.Droid.Activity
 
             searchView.ViewAttachedToWindow += delegate
             {
-                _authenticatorTouchHelperCallback.IsLocked = true;
+                if (_authenticatorTouchHelperCallback != null)
+                {
+                    _authenticatorTouchHelperCallback.IsLocked = true;
+                }
             };
 
             searchView.ViewDetachedFromWindow += delegate
             {
-                _authenticatorTouchHelperCallback.IsLocked = ShouldLockReordering();
+                if (_authenticatorTouchHelperCallback != null)
+                {
+                    _authenticatorTouchHelperCallback.IsLocked = ShouldLockReordering();
+                }
             };
 
             var sortItem = menu.FindItem(Resource.Id.actionSort);
@@ -474,6 +488,14 @@ namespace Stratum.Droid.Activity
 
             menu.FindItem(sortItemId)?.SetChecked(true);
 
+            var viewModeItemId = ViewModeSpecification.FromName(Preferences.ViewMode) switch
+            {
+                ViewMode.Compact => Resource.Id.actionViewModeCompact,
+                ViewMode.Tile => Resource.Id.actionViewModeTile,
+                _ => Resource.Id.actionViewModeDefault
+            };
+            menu.FindItem(viewModeItemId)?.SetChecked(true);
+
             var sortLockUnlockItem = menu.FindItem(Resource.Id.actionSortLockUnlock);
             
             sortLockUnlockItem?.SetTitle(GetString(Preferences.LockOrdering
@@ -485,6 +507,25 @@ namespace Stratum.Droid.Activity
 
         public override bool OnOptionsItemSelected(IMenuItem item)
         {
+            var viewMode = item.ItemId switch
+            {
+                Resource.Id.actionViewModeDefault => "default",
+                Resource.Id.actionViewModeCompact => "compact",
+                Resource.Id.actionViewModeTile => "tile",
+                _ => null
+            };
+
+            if (viewMode != null)
+            {
+                if (Preferences.ViewMode != viewMode)
+                {
+                    Preferences.ViewMode = viewMode;
+                    Recreate();
+                }
+
+                return true;
+            }
+
             if (item.ItemId == Resource.Id.actionSortLockUnlock)
             {
                 Preferences.LockOrdering = !Preferences.LockOrdering;
@@ -538,13 +579,7 @@ namespace Stratum.Droid.Activity
             bundle.PutObject("currentCategorySelector", _authenticatorView.CategorySelector);
 
             var fragment = new MainMenuBottomSheet { Arguments = bundle };
-            fragment.CategoryClicked += async (_, selector) =>
-            {
-                await SwitchCategory(selector);
-                RunOnUiThread(fragment.Dismiss);
-            };
-
-            fragment.BackupClicked += delegate
+fragment.BackupClicked += delegate
             {
                 if (!_authenticatorView.AnyWithoutFilter())
                 {
@@ -608,18 +643,9 @@ namespace Stratum.Droid.Activity
                 return;
             }
 
-            var defaultCategoryId = Preferences.DefaultCategory;
-            
-            if (defaultCategoryId == null)
+            if (!_isShowingCategoryHome)
             {
-                await SwitchCategory(CategorySelector.Of(MetaCategory.All));
-            }
-            else
-            {
-                if (!_authenticatorView.CategorySelector.Is(defaultCategoryId))
-                {
-                    await SwitchCategory(CategorySelector.Of(defaultCategoryId));
-                }
+                ShowCategoryHome();
             }
         }
 
@@ -681,6 +707,7 @@ namespace Stratum.Droid.Activity
                 _shouldLoadFromPersistenceOnNextOpen = false;
 
                 await _authenticatorView.LoadFromPersistenceAsync();
+                await _categoryView.LoadFromPersistenceAsync();
                 await _customIconView.LoadFromPersistenceAsync();
 
                 RunOnUiThread(delegate
@@ -688,10 +715,12 @@ namespace Stratum.Droid.Activity
                     AnimUtil.FadeOutView(ProgressIndicator, AnimUtil.LengthShort, true);
                     _authenticatorListAdapter.NotifyDataSetChanged();
                     _authenticatorListAdapter.Tick();
-                    _authenticatorList.ScheduleLayoutAnimation();
                 });
 
-                await CheckIfActiveCategoryDeletedAsync();
+                if (!_isShowingCategoryHome)
+                {
+                    await CheckIfActiveCategoryDeletedAsync();
+                }
             }
             else
             {
@@ -707,14 +736,13 @@ namespace Stratum.Droid.Activity
                 _preventBackupReminder = true;
             }
             
-            var defaultCategoryId = Preferences.DefaultCategory;
-
-            if (defaultCategoryId != null)
+            if (_isShowingCategoryHome)
             {
-                await SwitchCategory(CategorySelector.Of(defaultCategoryId));
+                ShowCategoryHome();
             }
             else
             {
+                ShowAuthenticatorList();
                 CheckEmptyState();
                 UpdateBackpressIntercept();
             }
@@ -748,14 +776,8 @@ namespace Stratum.Droid.Activity
 
         private void InitViews()
         {
-            if (Preferences.DefaultCategory == null)
-            {
-                SupportActionBar.SetTitle(Resource.String.categoryAll);
-            }
-            else
-            {
-                SupportActionBar.SetDisplayShowTitleEnabled(false);
-            }
+            SupportActionBar.SetTitle(Resource.String.displayName);
+            SupportActionBar.SetDisplayShowTitleEnabled(true);
 
             if (Preferences.TransparentStatusBar)
             {
@@ -770,7 +792,7 @@ namespace Stratum.Droid.Activity
             _bottomAppBar.NavigationClick += OnBottomAppBarNavigationClick;
             _bottomAppBar.MenuItemClick += delegate
             {
-                if (_authenticatorListAdapter == null)
+                if (_isShowingCategoryHome || _authenticatorListAdapter == null)
                 {
                     return;
                 }
@@ -811,25 +833,166 @@ namespace Stratum.Droid.Activity
             _authenticatorListAdapter.MovementStarted += OnAuthenticatorListMovementStarted;
             _authenticatorListAdapter.MovementFinished += OnAuthenticatorListMovementFinished;
 
-            _authenticatorList.SetAdapter(_authenticatorListAdapter);
-
             var viewMode = ViewModeSpecification.FromName(Preferences.ViewMode);
             _authenticatorLayout = new AutoGridLayoutManager(this, viewMode.GetMinColumnWidth());
-            _authenticatorList.SetLayoutManager(_authenticatorLayout);
-
-            _authenticatorList.AddItemDecoration(new GridSpacingItemDecoration(this, _authenticatorLayout,
-                viewMode.GetSpacing(), true));
-            _authenticatorList.HasFixedSize = false;
-
-            var animation = AnimationUtils.LoadLayoutAnimation(this, Resource.Animation.layout_animation_fall_down);
-            _authenticatorList.LayoutAnimation = animation;
-
             _authenticatorTouchHelperCallback =
-                new ReorderableListTouchHelperCallback(this, _authenticatorListAdapter, _authenticatorLayout);
-            _authenticatorTouchHelperCallback.IsLocked = ShouldLockReordering();
-            
-            var touchHelper = new ItemTouchHelper(_authenticatorTouchHelperCallback);
-            touchHelper.AttachToRecyclerView(_authenticatorList);
+                new ReorderableListTouchHelperCallback(this, _authenticatorListAdapter, _authenticatorLayout)
+                {
+                    IsLocked = ShouldLockReordering()
+                };
+
+            SetListPresentation(_authenticatorListAdapter, _authenticatorLayout, _authenticatorTouchHelperCallback,
+                viewMode.GetSpacing(), Resource.Animation.layout_animation_fall_down);
+        }
+
+        private void SetListPresentation(RecyclerView.Adapter adapter, GridLayoutManager layout,
+            ReorderableListTouchHelperCallback callback, int spacingDp, int animationResource)
+        {
+            _currentTouchHelper?.AttachToRecyclerView(null);
+
+            if (_listItemDecoration != null)
+            {
+                _authenticatorList.RemoveItemDecoration(_listItemDecoration);
+            }
+
+            _authenticatorList.SetAdapter(adapter);
+            _authenticatorList.SetLayoutManager(layout);
+            _listItemDecoration = new GridSpacingItemDecoration(this, layout, spacingDp, true);
+            _authenticatorList.AddItemDecoration(_listItemDecoration);
+            _authenticatorList.HasFixedSize = false;
+            _authenticatorList.LayoutAnimation = AnimationUtils.LoadLayoutAnimation(this, animationResource);
+
+            _currentTouchHelper = new ItemTouchHelper(callback);
+            _currentTouchHelper.AttachToRecyclerView(_authenticatorList);
+        }
+
+        private void ShowAuthenticatorList()
+        {
+            if (_authenticatorListAdapter == null || _authenticatorLayout == null || _authenticatorTouchHelperCallback == null)
+            {
+                return;
+            }
+
+            if (_authenticatorList.GetAdapter() != _authenticatorListAdapter)
+            {
+                var viewMode = ViewModeSpecification.FromName(Preferences.ViewMode);
+                _authenticatorLayout = new AutoGridLayoutManager(this, viewMode.GetMinColumnWidth());
+                _authenticatorTouchHelperCallback =
+                    new ReorderableListTouchHelperCallback(this, _authenticatorListAdapter, _authenticatorLayout)
+                    {
+                        IsLocked = ShouldLockReordering()
+                    };
+                SetListPresentation(_authenticatorListAdapter, _authenticatorLayout, _authenticatorTouchHelperCallback,
+                    viewMode.GetSpacing(), Resource.Animation.layout_animation_fall_down);
+            }
+        }
+
+        private void ShowCategoryHome()
+        {
+            _isShowingCategoryHome = true;
+            var viewMode = ViewModeSpecification.FromName(Preferences.ViewMode);
+            var spanCount = viewMode == ViewMode.Compact ? 1 : 2;
+
+            _categoryHomeListAdapter = new CategoryHomeListAdapter(this, _categoryView, _customIconView, IsDark,
+                Preferences.ShowUncategorised)
+            {
+                HasStableIds = true
+            };
+            _categoryHomeListAdapter.CategorySelected += async (_, selector) => await SwitchCategory(selector);
+            _categoryHomeListAdapter.MenuClicked += (_, _) => OpenCategoryManagement();
+            _categoryHomeListAdapter.MovementFinished += OnCategoryListMovementFinished;
+
+            _categoryLayout = new FixedGridLayoutManager(this, spanCount);
+            _categoryTouchHelperCallback = new ReorderableListTouchHelperCallback(this, _categoryHomeListAdapter,
+                _categoryLayout);
+            SetListPresentation(_categoryHomeListAdapter, _categoryLayout, _categoryTouchHelperCallback,
+                viewMode.GetSpacing(), Resource.Animation.layout_animation_fade_in);
+
+            RunOnUiThread(delegate
+            {
+                SupportActionBar.SetTitle(Resource.String.displayName);
+                SupportActionBar.SetDisplayShowTitleEnabled(true);
+                _categoryHomeListAdapter.NotifyDataSetChanged();
+                _authenticatorList.ScheduleLayoutAnimation();
+                InvalidateOptionsMenu();
+                ScrollToPosition(0, false);
+                _bottomAppBar.PerformShow();
+            });
+
+            CheckEmptyState();
+            UpdateBackpressIntercept();
+        }
+
+        private async void OnCategoryListMovementFinished(object sender, bool orderChanged)
+        {
+            if (!orderChanged)
+            {
+                return;
+            }
+
+            for (var i = 0; i < _categoryView.Count; ++i)
+            {
+                _categoryView[i].Ranking = i;
+            }
+
+            try
+            {
+                await _categoryService.UpdateManyCategoriesAsync(_categoryView);
+                Preferences.BackupRequired = BackupRequirement.WhenPossible;
+            }
+            catch (Exception e)
+            {
+                _log.Error(e, "Error saving category order");
+                ShowSnackbar(Resource.String.genericError, Snackbar.LengthShort);
+                await _categoryView.LoadFromPersistenceAsync();
+                _categoryHomeListAdapter?.NotifyDataSetChanged();
+            }
+        }
+
+        private void OpenCategoryManagement()
+        {
+            _shouldLoadFromPersistenceOnNextOpen = true;
+            StartActivity(typeof(CategoriesActivity));
+        }
+
+        private void OpenAddCategoryDialog()
+        {
+            var bundle = new Bundle();
+            bundle.PutInt("mode", (int) EditCategoryBottomSheet.Mode.New);
+
+            var fragment = new EditCategoryBottomSheet { Arguments = bundle };
+            fragment.Submitted += OnAddCategorySubmitted;
+            fragment.Show(SupportFragmentManager, fragment.Tag);
+        }
+
+        private async void OnAddCategorySubmitted(object sender, EditCategoryBottomSheet.EditCategoryEventArgs args)
+        {
+            var dialog = (EditCategoryBottomSheet) sender;
+            var category = new Category(args.Name);
+
+            try
+            {
+                await _categoryService.AddCategoryAsync(category);
+                await _categoryView.LoadFromPersistenceAsync();
+                Preferences.BackupRequired = BackupRequirement.WhenPossible;
+            }
+            catch (EntityDuplicateException)
+            {
+                dialog.NameError = GetString(Resource.String.duplicateCategory);
+                return;
+            }
+            catch (Exception e)
+            {
+                _log.Error(e, "Error adding category from home");
+                ShowSnackbar(Resource.String.genericError, Snackbar.LengthShort);
+                return;
+            }
+
+            RunOnUiThread(delegate
+            {
+                _categoryHomeListAdapter?.NotifyDataSetChanged();
+                dialog.Dismiss();
+            });
         }
 
         private void OnAuthenticatorListMovementStarted(object sender, EventArgs e)
@@ -881,6 +1044,26 @@ namespace Stratum.Droid.Activity
 
         private void CheckEmptyState()
         {
+            if (_isShowingCategoryHome)
+            {
+                RunOnUiThread(delegate
+                {
+                    if (_emptyStateLayout.Visibility == ViewStates.Visible)
+                    {
+                        AnimUtil.FadeOutView(_emptyStateLayout, AnimUtil.LengthShort);
+                    }
+
+                    if (_authenticatorList.Visibility != ViewStates.Visible)
+                    {
+                        AnimUtil.FadeInView(_authenticatorList, AnimUtil.LengthLong);
+                    }
+
+                    _authenticatorList.OverScrollMode = OverScrollMode.Never;
+                });
+                _timer.Stop();
+                return;
+            }
+
             if (!_authenticatorView.Any())
             {
                 RunOnUiThread(delegate
@@ -950,16 +1133,7 @@ namespace Stratum.Droid.Activity
             }
             else
             {
-                var defaultCategoryId = Preferences.DefaultCategory;
-
-                if (defaultCategoryId == null)
-                {
-                    shouldInterceptBackpress = !_authenticatorView.CategorySelector.Is(MetaCategory.All);
-                }
-                else
-                {
-                    shouldInterceptBackpress = !_authenticatorView.CategorySelector.Is(defaultCategoryId);
-                }
+                shouldInterceptBackpress = !_isShowingCategoryHome;
             }
 
             _backPressCallback.Enabled = shouldInterceptBackpress;
@@ -967,6 +1141,9 @@ namespace Stratum.Droid.Activity
 
         private async Task SwitchCategory(CategorySelector selector)
         {
+            _isShowingCategoryHome = false;
+            ShowAuthenticatorList();
+
             string categoryName = null;
 
             if (selector.IsMetaCategory(out var metaCategory))
@@ -980,7 +1157,16 @@ namespace Stratum.Droid.Activity
             else if (selector.IsCategory(out var categoryId))
             {
                 var category = await _categoryService.GetCategoryByIdAsync(categoryId);
-                categoryName = category.Name;
+
+                if (category == null)
+                {
+                    selector = CategorySelector.Of(MetaCategory.All);
+                    categoryName = GetString(Resource.String.categoryAll);
+                }
+                else
+                {
+                    categoryName = category.Name;
+                }
             }
 
             var shouldAnimateTransition = _authenticatorView.CategorySelector != null &&
@@ -1003,6 +1189,7 @@ namespace Stratum.Droid.Activity
                 }
                 
                 _authenticatorTouchHelperCallback.IsLocked = ShouldLockReordering();
+                InvalidateOptionsMenu();
                 
                 ScrollToPosition(0, false);
                 _bottomAppBar.PerformShow();
@@ -1173,6 +1360,8 @@ namespace Stratum.Droid.Activity
             };
 
             fragment.EnterKeyClicked += OpenAddDialog;
+            fragment.AddCategoryClicked += delegate { OpenAddCategoryDialog(); };
+            fragment.ManageCategoriesClicked += delegate { OpenCategoryManagement(); };
             fragment.RestoreClicked += delegate { StartFilePickActivity("*/*", RequestRestore); };
             fragment.ImportClicked += delegate { OpenImportMenu(); };
 

@@ -1,0 +1,5 @@
+- Category-first home screen with simplified navigation
+- Added Chinese labels for category actions
+- Preserved custom category icon colors
+- Localized the home title to 验证器
+- Bug fixes
