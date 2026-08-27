@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 env:
   CONFIGURATION: Release
   DOTNET_CLI_TELEMETRY_OPTOUT: true
@@ -87,7 +90,6 @@ jobs:
             out/com.stratumauth.app.fdroid.apk
             out/com.stratumauth.app.wearos.apk
           token: "${{ secrets.GH_TOKEN }}"
-          discussion_category_name: "General"
           body_path: "${{ env.CHANGELOG_PATH }}"
           draft: false
 
