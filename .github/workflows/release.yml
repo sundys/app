@@ -89,7 +89,7 @@ jobs:
             out/com.stratumauth.app.apk
             out/com.stratumauth.app.fdroid.apk
             out/com.stratumauth.app.wearos.apk
-          token: "${{ secrets.GH_TOKEN }}"
+          token: "${{ github.token }}"
           body_path: "${{ env.CHANGELOG_PATH }}"
           draft: false
 
