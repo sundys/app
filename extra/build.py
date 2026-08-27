@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ElementTree
 from typing import Generator
 
 PACKAGE_NAME = "com.stratumauth.app"
-REPO = "https://github.com/stratumauth/app.git"
+REPO = "https://github.com/sundys/app.git"
 
 CONFIGURATION = "Release"
 
