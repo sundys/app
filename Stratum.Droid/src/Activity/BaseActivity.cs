@@ -96,14 +96,15 @@ namespace Stratum.Droid.Activity
 
             Locale locale;
 
-            if (language.Contains('-'))
+            if (language == "system")
             {
-                var parts = language.Split('-', 2);
-                locale = new Locale(parts[0], parts[1]);
+                // Follow the device language when it is one of the bundled
+                // locales; otherwise use English as the safe fallback.
+                locale = CreateLocale(ResolveSystemLanguage(Locale.Default));
             }
             else
             {
-                locale = new Locale(language);
+                locale = CreateLocale(language);
             }
 
             config?.SetLocale(locale);
@@ -125,6 +126,33 @@ namespace Stratum.Droid.Activity
             base.AttachBaseContext(context);
         }
         
+        private static Locale CreateLocale(string language)
+        {
+            if (language.Contains('-'))
+            {
+                var parts = language.Split('-', 2);
+                return new Locale(parts[0], parts[1]);
+            }
+
+            return new Locale(language);
+        }
+
+        private static string ResolveSystemLanguage(Locale systemLocale)
+        {
+            if (systemLocale?.Language?.Equals("zh", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                var country = systemLocale.Country?.ToUpperInvariant();
+                var script = systemLocale.Script?.ToUpperInvariant();
+                return script == "HANT" || country is "TW" or "HK" or "MO"
+                    ? "zh-TW"
+                    : "zh-CN";
+            }
+
+            return systemLocale?.Language?.Equals("en", StringComparison.OrdinalIgnoreCase) == true
+                ? "en"
+                : "en";
+        }
+
         public override void OnConfigurationChanged(Configuration newConfig)
         {
             base.OnConfigurationChanged(newConfig);

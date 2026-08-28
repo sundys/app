@@ -36,11 +36,13 @@
     </integer-array>
 
     <string-array name="languageNames">
+        <item>@string/systemDefault</item>
         <item>@string/english</item>
         <item>@string/chineseSimplified</item>
         <item>@string/chineseTraditional</item>
     </string-array>
     <string-array name="languageValues">
+        <item>system</item>
         <item>en</item>
         <item>zh-CN</item>
         <item>zh-TW</item>

@@ -27,12 +27,13 @@ namespace Stratum.Droid
         }
 
         private const string LanguageKey = "pref_language";
-        private const string LanguageDefault = "en";
+        private const string LanguageDefault = "system";
 
         public string Language
         {
             get => Preferences.GetString(LanguageKey, LanguageDefault) switch
             {
+                "system" => "system",
                 "en" => "en",
                 "zh-CN" => "zh-CN",
                 "zh-TW" => "zh-TW",
