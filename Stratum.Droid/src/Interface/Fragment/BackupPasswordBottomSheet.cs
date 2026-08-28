@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System;
+using Android.Text;
 using Android.OS;
 using Android.Views;
 using Android.Views.InputMethods;
@@ -56,6 +57,10 @@ namespace Stratum.Droid.Interface.Fragment
 
             _passwordText = view.FindViewById<TextInputEditText>(Resource.Id.editPassword);
             _passwordTextLayout = view.FindViewById<TextInputLayout>(Resource.Id.editPasswordLayout);
+
+            // Passwords are opaque user data. Do not allow an input filter or
+            // autofill service to silently remove punctuation from them.
+            _passwordText.SetFilters(Array.Empty<IInputFilter>());
 
             _progressIndicator = view.FindViewById<CircularProgressIndicator>(Resource.Id.progressIndicator);
 

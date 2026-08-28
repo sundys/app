@@ -1,0 +1,5 @@
+- Disabled automatic F-Droid server deployment while keeping the workflow code for future use.
+- Limited the language selector to English, Simplified Chinese, and Traditional Chinese.
+- Preserved special characters in automatic backup passwords and added password input guidance.
+- Updated the Android release to version 1.6.5.
+- Fixed the bottom search action so it remains available in the center position on the home screen.

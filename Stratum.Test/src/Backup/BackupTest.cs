@@ -34,6 +34,7 @@ namespace Stratum.Test.Backup
         [InlineData("test")]
         [InlineData("test123")]
         [InlineData("test123!?%")]
+        [InlineData(@"=HH9vM1F9*SmN\oDi&68`")]
         [InlineData("PZqE=_L]Ra;ZD8N&")]
         [InlineData("tUT.3raAGQ[f]]Q@Ft=S}.r(Vk&CM9#`")]
         [InlineData(@"MS^NqdNp&y]tLz_5:P;UU/2LDd_uF7a""x@*a't/Da]'y&b~.=&z3x'r^u{X.@?vv")]

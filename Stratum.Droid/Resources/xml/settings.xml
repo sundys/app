@@ -26,7 +26,7 @@
             app:iconSpaceReserved="false"
             android:entries="@array/languageNames"
             android:entryValues="@array/languageValues"
-            android:defaultValue="system"/>
+            android:defaultValue="en"/>
         <stratum.droid.interface.preference.MaterialSwitchPreference
             android:key="pref_tapToCopy"
             android:summary="@string/prefTapToCopySummary"

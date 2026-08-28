@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="authTypes">
         <item>@string/authTypeTime</item>
@@ -36,64 +36,14 @@
     </integer-array>
 
     <string-array name="languageNames">
-        <item>@string/systemDefault</item>
-        <item>@string/danish</item>
-        <item>@string/german</item>
         <item>@string/english</item>
-        <item>@string/spanish</item>
-        <item>@string/french</item>
-        <item>@string/italian</item>
-        <item>@string/hungarian</item>
-        <item>@string/dutch</item>
-        <item>@string/polish</item>
-        <item>@string/portuguese</item>
-        <item>@string/brazilianPortuguese</item>
-        <item>@string/russian</item>
-        <item>@string/romanian</item>
-        <item>@string/slovak</item>
-        <item>@string/finnish</item>
-        <item>@string/swedish</item>
-        <item>@string/vietnamese</item>
-        <item>@string/turkish</item>
-        <item>@string/czech</item>
-        <item>@string/ukrainian</item>
-        <item>@string/arabic</item>
-        <item>@string/kannada</item>
-        <item>@string/thai</item>
-        <item>@string/japanese</item>
         <item>@string/chineseSimplified</item>
         <item>@string/chineseTraditional</item>
-        <item>@string/korean</item>
     </string-array>
     <string-array name="languageValues">
-        <item>system</item>
-        <item>da</item>
-        <item>de</item>
         <item>en</item>
-        <item>es</item>
-        <item>fr</item>
-        <item>it</item>
-        <item>hu</item>
-        <item>nl</item>
-        <item>pl</item>
-        <item>pt</item>
-        <item>pt-BR</item>
-        <item>ru</item>
-        <item>ro</item>
-        <item>sk</item>
-        <item>fi</item>
-        <item>sv</item>
-        <item>vi</item>
-        <item>tr</item>
-        <item>cs</item>
-        <item>uk</item>
-        <item>ar</item>
-        <item>kn-IN</item>
-        <item>th</item>
-        <item>ja</item>
         <item>zh-CN</item>
         <item>zh-TW</item>
-        <item>ko</item>
     </string-array>
 
     <string-array name="timeoutNames">

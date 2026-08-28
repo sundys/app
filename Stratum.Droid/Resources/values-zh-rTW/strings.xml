@@ -154,7 +154,7 @@
     -->
     <string name="backupNow">立即備份</string>
     <string name="backupReminder">自上次備份後出現了新的變更。</string>
-    <string name="backupPasswordMessage">請輸入用於安全加密備份檔案的密碼。如果您不需要使用密碼保護備份檔案，請將密碼欄留空。</string>
+    <string name="backupPasswordMessage">請輸入用於安全加密備份檔案的密碼。特殊字元會依輸入內容原樣保留。如果您不需要使用密碼保護備份檔案，請將密碼欄留空。</string>
     <string name="password">密碼</string>
     <string name="passwordConfirm">確認密碼</string>
     <string name="confirmEmptyPassword">您沒有輸入密碼，這將導致您的備份處於未加密狀態，且您的金鑰將會被明文暴露。您確定要繼續嗎？</string>

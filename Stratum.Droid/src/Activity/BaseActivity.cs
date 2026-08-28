@@ -96,11 +96,7 @@ namespace Stratum.Droid.Activity
 
             Locale locale;
 
-            if (language == "system")
-            {
-                locale = Locale.Default;
-            }
-            else if (language.Contains('-'))
+            if (language.Contains('-'))
             {
                 var parts = language.Split('-', 2);
                 locale = new Locale(parts[0], parts[1]);

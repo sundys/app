@@ -183,7 +183,7 @@
     <string name="backupNow">Back up now</string>
     <string name="backupReminder">There have been changes since your last backup</string>
 
-    <string name="backupPasswordMessage">Enter a password to securely encrypt your backup file. If you do not wish to password protect the file, leave the password empty.</string>
+    <string name="backupPasswordMessage">Enter a password to securely encrypt your backup file. Special characters are preserved as entered. If you do not wish to password protect the file, leave the password empty.</string>
 
     <string name="password">Password</string>
     <string name="passwordConfirm">Password confirm</string>
