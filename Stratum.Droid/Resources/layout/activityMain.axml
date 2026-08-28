@@ -106,10 +106,24 @@
         app:fabCradleMargin="0dp"
         app:fabCradleRoundedCornerRadius="0dp"
         app:hideOnScroll="true"
-        app:menu="@menu/bottom"
         app:paddingBottomSystemWindowInsets="true"
         app:navigationIcon="@drawable/baseline_menu_24"
         app:navigationIconTint="?attr/colorOnSurface"/>
+
+    <ImageButton
+        android:id="@+id/buttonSearch"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:contentDescription="@string/search"
+        android:padding="12dp"
+        android:background="?selectableItemBackgroundBorderless"
+        android:src="@drawable/baseline_search_24"
+        android:tint="?attr/colorOnSurface"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_anchor="@id/bottomAppBar"
+        app:layout_anchorGravity="center"
+        />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/buttonAdd"

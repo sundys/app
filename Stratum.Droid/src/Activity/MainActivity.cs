@@ -774,7 +774,8 @@ fragment.BackupClicked += delegate
             _bottomAppBar = FindViewById<BottomAppBar>(Resource.Id.bottomAppBar);
             _bottomAppBar.SetNavigationContentDescription(Resource.String.mainMenu);
             _bottomAppBar.NavigationClick += OnBottomAppBarNavigationClick;
-            _bottomAppBar.MenuItemClick += async delegate
+            var searchButton = FindViewById<ImageButton>(Resource.Id.buttonSearch);
+            searchButton.Click += async delegate
             {
                 if (_authenticatorListAdapter == null)
                 {
