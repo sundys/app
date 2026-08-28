@@ -774,14 +774,29 @@ fragment.BackupClicked += delegate
             _bottomAppBar = FindViewById<BottomAppBar>(Resource.Id.bottomAppBar);
             _bottomAppBar.SetNavigationContentDescription(Resource.String.mainMenu);
             _bottomAppBar.NavigationClick += OnBottomAppBarNavigationClick;
-            _bottomAppBar.MenuItemClick += delegate
+            _bottomAppBar.MenuItemClick += async delegate
             {
-                if (_isShowingCategoryHome || _authenticatorListAdapter == null)
+                if (_authenticatorListAdapter == null)
                 {
                     return;
                 }
 
-                Toolbar.Menu.FindItem(Resource.Id.actionSearch).ExpandActionView();
+                // The bottom bar remains visible on the category home page. Switch to
+                // the complete authenticator list before opening the toolbar search;
+                // otherwise the old guard made the search button appear unresponsive.
+                if (_isShowingCategoryHome)
+                {
+                    await SwitchCategory(CategorySelector.Of(MetaCategory.All));
+                }
+
+                var searchItem = Toolbar?.Menu.FindItem(Resource.Id.actionSearch);
+                if (searchItem == null)
+                {
+                    return;
+                }
+
+                searchItem.SetVisible(true);
+                searchItem.ExpandActionView();
                 ScrollToPosition(0);
             };
 
