@@ -100,7 +100,7 @@ namespace Stratum.Droid.Activity
             {
                 // Follow the device language when it is one of the bundled
                 // locales; otherwise use English as the safe fallback.
-                locale = CreateLocale(ResolveSystemLanguage(Locale.Default));
+                locale = CreateLocale(ResolveSystemLanguage(GetSystemLocale(context)));
             }
             else
             {
@@ -135,6 +135,20 @@ namespace Stratum.Droid.Activity
             }
 
             return new Locale(language);
+        }
+
+        private static Locale GetSystemLocale(Context context)
+        {
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.N)
+            {
+                var locales = context.Resources?.Configuration?.Locales;
+                if (locales != null && locales.Size() > 0)
+                {
+                    return locales.Get(0);
+                }
+            }
+
+            return Locale.Default;
         }
 
         private static string ResolveSystemLanguage(Locale systemLocale)
